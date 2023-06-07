@@ -2,27 +2,45 @@ import 'dart:ui';
 
 import 'package:chat_app/components/my_button.dart';
 import 'package:chat_app/components/my_textfield.dart';
+import 'package:chat_app/components/snack_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:loading_overlay/loading_overlay.dart';
 
-class Signup extends StatelessWidget {
-  Signup({super.key});
+class Signup extends StatefulWidget {
+  const Signup({super.key});
 
+  @override
+  State<Signup> createState() => _SignupState();
+}
+
+class _SignupState extends State<Signup> {
   // text editing controllers
   final emailController = TextEditingController();
+
   final passwordController = TextEditingController();
 
-  final double _sigmaX = 5; // from 0-10
-  final double _sigmaY = 5; // from 0-10
+  final double _sigmaX = 5;
+  // from 0-10
+  final double _sigmaY = 5;
+  // from 0-10
   final double _opacity = 0.2;
+
   final double _width = 350;
+
   final double _height = 300;
+
   final _formKey = GlobalKey<FormState>();
+
+  bool isLoading = false;
 
   // sign user in method
   void signUserIn(BuildContext context) async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        isLoading = true;
+      });
       final String loginEmail = emailController.text;
       final String loginPassword = passwordController.text;
       try {
@@ -34,63 +52,81 @@ class Signup extends StatelessWidget {
             'Email': value.user!.email,
           });
         });
+        ShowSnackBar().showSnakbar(context, 'Succes');
         // ignore: use_build_context_synchronously
         Navigator.pushNamed(context, 'LoginPage');
       } on FirebaseAuthException catch (e) {
-        print(e.toString());
+        if (e.code == 'weak-password') {
+          ShowSnackBar().showSnakbar(context, 'Weak password');
+        } else if (e.code == 'email-already-in-use') {
+          ShowSnackBar().showSnakbar(context, 'Already in use');
+        }
       }
+      setState(() {
+        isLoading = false;
+      });
     } else {
       print('not valid');
     }
   }
 
   @override
+  void dispose() {
+    passwordController.dispose();
+    emailController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[300],
-      body: SingleChildScrollView(
-        child: SizedBox(
-          height: MediaQuery.of(context).size.height,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Image.network(
-                'https://cdn.discordapp.com/attachments/679377927611351119/1110849982195568671/Rectangle_1.png',
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height,
-                fit: BoxFit.cover,
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.05),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios),
-                    color: Colors.white,
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.26),
-                  ////////////////////////////
-                  const Text(
-                    "Sign Up",
-                    style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold),
-                  ),
-                  ////////////////////////////
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-                  ////////////////////////////
-                  ClipRrectWidgt(
-                      sigmaX: _sigmaX,
-                      sigmaY: _sigmaY,
-                      onPressed12: signUserIn,
-                      opacity: _opacity,
-                      formKey: _formKey,
-                      usernameController: emailController,
-                      passwordController: passwordController),
-                ],
-              )
-            ],
+    return LoadingOverlay(
+      isLoading: isLoading,
+      child: Scaffold(
+        backgroundColor: Colors.grey[300],
+        body: SingleChildScrollView(
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Image.network(
+                  'https://cdn.discordapp.com/attachments/679377927611351119/1110849982195568671/Rectangle_1.png',
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                  fit: BoxFit.cover,
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios),
+                      color: Colors.white,
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.10),
+                    ////////////////////////////
+                    const Text(
+                      "Sign Up",
+                      style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold),
+                    ),
+                    ////////////////////////////
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                    ////////////////////////////
+                    ClipRrectWidgt(
+                        sigmaX: _sigmaX,
+                        sigmaY: _sigmaY,
+                        onPressed12: signUserIn,
+                        opacity: _opacity,
+                        formKey: _formKey,
+                        usernameController: emailController,
+                        passwordController: passwordController),
+                  ],
+                )
+              ],
+            ),
           ),
         ),
       ),
@@ -132,7 +168,7 @@ class ClipRrectWidgt extends StatelessWidget {
               color: const Color.fromRGBO(0, 0, 0, 1).withOpacity(_opacity),
               borderRadius: const BorderRadius.all(Radius.circular(30))),
           width: MediaQuery.of(context).size.width * 0.9,
-          height: MediaQuery.of(context).size.height * 0.49,
+          height: MediaQuery.of(context).size.height * 0.64,
           child: Form(
             key: _formKey,
             child: Center(
